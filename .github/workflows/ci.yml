@@ -64,4 +64,3 @@ jobs:
           cd /tmp
           /tmp/pbxonix-clean/bin/python -c "import pbxonix_agent.cli, pbxonix_agent.runner; print('imports clean')"
           /tmp/pbxonix-clean/bin/pbxonix-agent --help
-
