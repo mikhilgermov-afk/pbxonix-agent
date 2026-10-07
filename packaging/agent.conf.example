@@ -1,0 +1,62 @@
+# PBXonix agent configuration.
+# Installed to /etc/pbxonix/agent.conf as 0640 root:pbxonix.
+#
+# INI rather than YAML: the agent has no third-party dependencies and parses
+# this with configparser from the standard library.
+
+[agent]
+api_base_url = https://api.pbxonix.com
+heartbeat_interval_seconds = 30
+metrics_interval_seconds = 60
+# Lightweight operator states and queue summaries, separate from slow inventory.
+# 0 disables it; otherwise 5..60 seconds. No call-control actions are used.
+panel_interval_seconds = 5
+log_level = INFO
+
+# Only set to false against a lab with a private CA. Never in production.
+verify_tls = true
+
+[buffer]
+path = /var/lib/pbxonix/buffer.sqlite3
+# Bounded by rows AND bytes. The agent also refuses to write below 128 MB free,
+# whatever these say -- filling the PBX disk would cause the outage it exists
+# to prevent.
+max_rows = 50000
+max_bytes = 67108864
+
+[asterisk]
+# Phase 2. When enabled, the agent connects to the LOCAL manager interface only
+# and reads ami_username / ami_password from credentials.json -- never from this
+# file, and never sends them to the cloud.
+ami_enabled = false
+ami_host = 127.0.0.1
+ami_port = 5038
+
+[recordings]
+# Comma-separated. Only counts, sizes and timestamps are collected -- never
+# audio, and never a filename: Asterisk names recordings after the call, so the
+# name itself is personal data.
+paths = /var/spool/asterisk/monitor
+# Recordings do not need per-minute resolution and a large spool is expensive
+# to walk. Minimum 30.
+interval_seconds = 300
+# Safety valves for a spool with hundreds of thousands of files. The walk visits
+# newest-first, so hitting either limit leaves the freshness signal correct and
+# only the totals best-effort.
+max_scan_seconds = 10
+max_entries = 200000
+
+# Optional call and queue reports: see REPORTS.md before enabling.
+[reports]
+enabled = false
+defaults_file = /etc/pbxonix/reports-mysql.cnf
+cdr_mode = disabled
+cdr_database = asteriskcdrdb
+cdr_table = cdr
+cdr_csv = /var/log/asterisk/cdr-csv/Master.csv
+cdr_time_basis = local
+cel_table =
+queue_database = asteriskcdrdb
+queue_table =
+queue_time_basis = local
+history_days = 30

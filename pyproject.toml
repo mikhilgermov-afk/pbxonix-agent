@@ -1,0 +1,55 @@
+[project]
+name = "pbxonix-agent"
+version = "0.11.1"
+description = "PBXonix monitoring agent for Asterisk, FreePBX and Issabel"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+# 3.6, which is what a stock Issabel 4 / CentOS 7 box ships. The agent has to
+# install on the machines that actually exist rather than the ones we would
+# prefer, and those machines are the entire market: a monitoring tool for legacy
+# phone systems that refuses to run on legacy phone systems is not a product.
+# CentOS 7 is EOL and its SCL repos have moved to vault, so "just install a
+# newer Python first" is advice that frequently cannot be followed.
+#
+# The cost is paid in the source: no dataclasses, no `from __future__ import
+# annotations`, no PEP 604 unions. `make test-oldest` runs the suite on 3.6 so
+# a 3.7+ construct cannot slip in unnoticed.
+requires-python = ">=3.6"
+# No runtime dependencies, deliberately. The installer can then do an offline
+# `pip install --no-index` of a single verified wheel on a PBX with no route to
+# PyPI, and there is no third-party code running as a service on a phone system.
+dependencies = []
+
+[project.scripts]
+pbxonix-agent = "pbxonix_agent.cli:main"
+
+[project.urls]
+Homepage = "https://pbxonix.com"
+Repository = "https://github.com/mikhilgermov-afk/pbxonix-agent"
+Issues = "https://github.com/mikhilgermov-afk/pbxonix-agent/issues"
+Changelog = "https://github.com/mikhilgermov-afk/pbxonix-agent/releases"
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "ruff>=0.8", "build>=1.0"]
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["pbxonix_agent*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py37"  # ruff goes no lower; the real floor is 3.6, see test-oldest
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "S", "RUF"]
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S105", "S106", "S108"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

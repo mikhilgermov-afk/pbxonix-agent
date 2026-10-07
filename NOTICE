@@ -1,0 +1,6 @@
+PBXonix Agent
+Copyright 2026 PBXonix contributors
+
+This repository contains the local PBXonix monitoring agent and installation
+scripts. The hosted PBXonix Cloud service is a separate product and is not
+included in this repository or licensed by this NOTICE.

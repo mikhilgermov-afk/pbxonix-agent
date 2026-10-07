@@ -1,0 +1,51 @@
+; Read-only AMI user for PBXonix.
+;
+; Install:
+;   1. Put this file next to manager.conf as manager_pbxonix.conf
+;   2. Add to /etc/asterisk/manager.conf:   #include manager_pbxonix.conf
+;   3. asterisk -rx "manager reload"
+;
+; The secret below must match the one the agent stores locally. Getting both
+; right in one step:
+;
+;   pbxonix-agent ami-config --generate
+;
+; It generates the secret, stores it in /etc/pbxonix/credentials.json
+; (0640 root:pbxonix), and prints this file with it already filled in. The
+; secret is never transmitted to PBXonix Cloud.
+;
+; -----------------------------------------------------------------------------
+; A note on "read" and "write", because the names are misleading.
+;
+; In Asterisk, `read` controls which *unsolicited events* the session receives.
+; `write` controls which *actions* the session may invoke -- it does NOT mean
+; "may modify the system". Invoking PJSIPShowEndpoints therefore requires
+; write=system, even though it only reads.
+;
+; The permissions that would actually let this user do harm are `originate`
+; (place calls), `command` (run arbitrary CLI), `config` (rewrite configuration)
+; and `all`. None of them are granted below, and PBXonix has no code path that
+; would use them.
+; -----------------------------------------------------------------------------
+
+[pbxonix]
+secret = REPLACE_ME
+
+; Loopback only. The entire product exists so that nothing has to be exposed;
+; an AMI reachable from the network would undo that in one line.
+;
+; deny first, then permit. Asterisk walks the whole list and the LAST matching
+; rule wins, so a catch-all deny placed after the permit overrides it and
+; refuses everything -- loopback included. Every sample config Asterisk ships
+; is written in this order for exactly that reason.
+deny = 0.0.0.0/0.0.0.0
+permit = 127.0.0.1/255.255.255.255
+
+; system    -> PJSIPShowEndpoints, PJSIPShowRegistrationsOutbound, CoreStatus
+; reporting -> SIPshowregistry, CoreShowChannels, QueueStatus
+read = system,reporting
+write = system,reporting
+
+; No eventfilter is needed: the agent logs in with "Events: off", so the session
+; receives no unsolicited traffic at all -- only direct responses to the actions
+; it issues.

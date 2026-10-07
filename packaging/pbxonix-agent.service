@@ -1,0 +1,54 @@
+# Reference copy of the unit that install.sh writes.
+# Kept here so the sandbox is reviewable without reading the installer.
+[Unit]
+Description=PBXonix monitoring agent
+Documentation=https://pbxonix.com
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pbxonix
+Group=pbxonix
+ExecStart=/opt/pbxonix-agent/venv/bin/pbxonix-agent run --config /etc/pbxonix/agent.conf
+Restart=always
+RestartSec=10
+
+# The agent reads local state and dials out. Nothing below is needed for that,
+# so it is all denied. This is what makes it acceptable to run a monitoring
+# process on a production phone system.
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+CapabilityBoundingSet=
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+# ProtectSystem=strict makes everything read-only; the buffer needs one exception.
+ReadWritePaths=/var/lib/pbxonix
+
+# A monitoring agent must never make the thing it monitors worse. On a phone
+# system the media path is soft-realtime: a few tens of milliseconds of stolen
+# CPU or a blocked disk read is audible. So the agent runs behind everything
+# else -- it gets the machine only when nothing important wants it.
+#
+# This is not a limit on how much it may use; it is a statement about who
+# yields. Under contention Asterisk wins every time.
+Nice=10
+CPUWeight=20
+IOWeight=20
+IOSchedulingClass=idle
+
+MemoryMax=192M
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,34 @@
+# --- secrets: never commit ---
+credentials.json
+.env
+.env.*
+!.env.example
+agent.ini
+queue-mysql.cnf
+*.db
+*.pem
+*.key
+
+# --- python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
+
+# --- runtime ---
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.log
+
+# --- editors / os ---
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

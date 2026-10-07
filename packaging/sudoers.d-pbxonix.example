@@ -1,0 +1,19 @@
+# Install to /etc/sudoers.d/pbxonix with mode 0440, and validate first:
+#
+#   visudo -c -f /etc/sudoers.d/pbxonix
+#
+# Only needed if a collector requires elevation. The Phase 1 agent does not:
+# it reads /proc and talks to the local Asterisk CLI as a member of the
+# `asterisk` group.
+#
+# NOPASSWD: ALL is never acceptable. Name the exact commands, with no wildcards
+# that could be widened by an argument.
+
+Cmnd_Alias PBXONIX_READ = /usr/sbin/asterisk -rx "core show version", \
+                          /usr/sbin/asterisk -rx "core show uptime", \
+                          /usr/sbin/asterisk -rx "core show channels count", \
+                          /usr/sbin/asterisk -rx "pjsip show endpoints", \
+                          /usr/sbin/asterisk -rx "sip show registry", \
+                          /usr/sbin/asterisk -rx "queue show"
+
+pbxonix ALL=(root) NOPASSWD: PBXONIX_READ
