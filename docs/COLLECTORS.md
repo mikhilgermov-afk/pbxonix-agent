@@ -42,10 +42,18 @@ cycle.
 Subprocesses are always invoked with a fixed argv list, never a shell string, so
 there is nothing for a hostname or version banner to inject into.
 
-## Phase 2
+## AMI inventory, panel and recordings
 
-`ami.py`, `pjsip.py`, `queues.py`, `recordings.py`. The cloud-side tables,
-enums and alert kinds already exist — see `docs/ROADMAP.md` in `pbxonix-server`.
+`ami.py`, `trunks.py`, `extensions.py`, `queues.py` and `recordings.py` collect
+SIP/PJSIP trunk registration, endpoint inventory, operator state, queues and
+recording file totals. The recording collector sends no audio or filenames.
+
+`panel.py` samples lightweight states independently of slow inventory.
+`queue_daily.py` optionally reads a local realtime queue log to aggregate the
+current PBX calendar day without uploading customer phone numbers.
+
+For optional RTCP measurements and sanitized report collection, see
+[QUALITY.md](../QUALITY.md) and [REPORTS.md](../REPORTS.md).
 
 AMI connects to `127.0.0.1:5038` only, with a read-only manager user. See
 `packaging/manager_pbxonix.conf.example`.

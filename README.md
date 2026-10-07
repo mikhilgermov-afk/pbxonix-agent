@@ -37,9 +37,13 @@ telemetry. The cloud never connects back. You open no port, forward no AMI,
 expose no database and run no VPN.
 
 Every 30 seconds it sends a heartbeat. Every 60 seconds it samples metrics into
-a local SQLite buffer and flushes it, and — if AMI is enabled — reads SIP trunk
-state. If the cloud is unreachable the samples accumulate and replay when it
-returns.
+a local SQLite buffer and flushes it. With AMI enabled, slow inventory reads
+run every 300 seconds by default. A separate panel worker refreshes cached
+operator states and queue summaries every 5 seconds. Intervals are configurable.
+If the cloud is unreachable the buffered metrics replay when it returns.
+
+See [QUALITY.md](QUALITY.md) for RTCP quality collection and
+[REPORTS.md](REPORTS.md) for optional, locally sanitized report data.
 
 ## SIP trunk monitoring
 
@@ -51,9 +55,10 @@ replace `REPLACE_ME` with a secret you generate (`openssl rand -base64 32`), add
 `#include manager_pbxonix.conf` to `manager.conf`, then
 `asterisk -rx "manager reload"`.
 
-The user is loopback-only and holds no `originate`, `command`, `config` or `all`
-permission — PBXonix has no code path that would place a call, run a CLI command
-or rewrite dialplan, so it cannot.
+The AMI user is loopback-only and holds no `originate`, `command`, `config` or
+`all` permission. The agent does not place calls or rewrite dialplan. Local
+system probes use fixed, read-only Asterisk CLI commands. The optional quality
+clock helper permits only bounded codec lookups; see [QUALITY.md](QUALITY.md).
 
 **2. Store the secret locally.**
 
@@ -85,9 +90,9 @@ registrations, `PJSIPShowEndpoints` and `SIPpeers` for endpoint counts, and
 `QueueStatus` for queues. Both channel drivers are attempted, so a PBX running
 each for different trunks is handled.
 
-All of it comes from one AMI session per cycle. Each login costs a round trip
-and writes a line to Asterisk's log; there is no reason to pay that three times
-a minute for data that is read together.
+Slow inventory collectors share one AMI session per cycle. Lightweight panel
+sampling uses its own persistent session and peer-status events between
+inventory reads, so the 5-second panel does not repeat expensive full scans.
 
 Queues report calls waiting, how many agents are logged in, how many could
 actually take the next call (device state 1 and not paused), and the longest
@@ -101,8 +106,8 @@ A trunk mid-handshake ("Request Sent", "Stopping") reports `unknown`, which
 neither opens nor closes an alert. Treating it as recovered would resolve the
 alert and re-open it a minute later, forever.
 
-The AMI session is short-lived, opened once per cycle, and logs in with
-`Events: off` so it receives nothing but answers to its own questions.
+The inventory session logs in with `Events: off`. The persistent panel session
+and optional quality worker subscribe only to their required event classes.
 
 ## Design constraints
 
